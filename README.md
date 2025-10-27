@@ -1,12 +1,10 @@
 # Rati: A Web3-Driven Odyssey of Trust in the Realm of Human Desire
 
-![Rati Banner](https://via.placeholder.com/1280x400?text=Aegis:+Shield+of+Trust+in+the+Stars) <!-- Placeholder for a visionary banner image, evoking Asimov's cosmic scales -->
 
 In the vast expanse of human exploration, where the frontiers of desire intersect with the circuits of technology, emerges *Aegis*—a bastion forged in the fires of verifiable truth. Much like the positronic brains of my robotic creations, this ecosystem harnesses the immutable laws of Web3 to safeguard the sacred pursuits of consensual intimacy. Here, we do not merely build tools; we architect a new paradigm, where trust is not a fragile illusion but a provable constant, enabling the lawful navigation of myriad sensual voyages.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![World ID Integrated](https://img.shields.io/badge/World%20ID-Integrated-blueviolet.svg)](https://developer.worldcoin.org/)
-[![Build Status](https://img.shields.io/github/actions/workflow/status/your-repo/aegis.yml?label=Build)](https://github.com/your-repo/aegis/actions)
 [![Code Quality](https://img.shields.io/codefactor/grade/github/your-repo/aegis?label=Code%20Quality)](https://www.codefactor.io/repository/github/your-repo/aegis)
 [![Contributors](https://img.shields.io/github/contributors/your-repo/aegis.svg)](https://github.com/your-repo/aegis/graphs/contributors)
 [![Stars](https://img.shields.io/github/stars/your-repo/aegis?style=social)](https://github.com/your-repo/aegis)
