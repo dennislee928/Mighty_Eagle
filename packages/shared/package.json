@@ -1,0 +1,19 @@
+{
+  "name": "@aegis/shared",
+  "version": "0.0.0",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "lint": "eslint \"src/**/*.ts\"",
+    "type-check": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@aegis/eslint-config": "*",
+    "@aegis/typescript-config": "*",
+    "eslint": "^8.52.0",
+    "typescript": "^5.2.2"
+  }
+}
