@@ -255,3 +255,26 @@ Module 1: Review Library (內容評論庫)
 
 // Search
 - Meilisearch or Algolia - full-text search
+
+
+
+📦 Suggested Monorepo Structure
+aegis-ecosystem/
+├── apps/
+│   ├── web/                 # Next.js main website
+│   └── mobile/              # 👈 【新增】Expo (React Native) App (Phase 2/3)
+│   ├── admin/               # Admin dashboard
+│   └── mobile/              # Future: React Native app
+├── packages/
+│   ├── ui/                  # Shared UI components (shadcn/ui)
+│   ├── ui-mobile/           # 👈 【新增】App 的共享 UI 組件
+│   ├── config/              # Shared configs (Tailwind, ESLint)
+│   ├── auth/                # Authentication logic
+│   ├── types/               # 👈 【共享】Zod schemas (Web & Mobile 共用)
+│   └── worldid/             # 👈 【共享】World ID 邏輯 (Web & Mobile 共用)
+├── services/
+│   ├── api-go/              # Go backend (primary)
+│   ├── api-node/            # Node.js services (optional)
+│   └── worker/              # Background jobs (email, webhooks)
+├── scripts/                 # Deployment, migration scripts (Shell/PowerShell)
+└── infra/                   # Terraform configs
