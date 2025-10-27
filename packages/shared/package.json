@@ -11,8 +11,8 @@
     "type-check": "tsc --noEmit"
   },
   "devDependencies": {
-    "@aegis/eslint-config": "*",
-    "@aegis/typescript-config": "*",
+    "@aegis/eslint-config": "workspace:*",
+    "@aegis/typescript-config": "workspace:*",
     "eslint": "^8.52.0",
     "typescript": "^5.2.2"
   }
