@@ -140,3 +140,118 @@ pnpm add @worldcoin/idkit -w
 ```
 
 In this grand narrative of human and machine symbiosis, *Aegis* beckons as a lighthouse amid the stars of desire. Contribute, explore, and trust—for the laws of robotics pale beside the ethics of consent.
+
+🛠️ Complete Tech Stack for Aegis
+Core Infrastructure
+# Monorepo Management
+- Turborepo or pnpm workspaces
+- pnpm (package manager)
+Frontend Stack
+// Framework & Core
+- Next.js 14+ (App Router) - SSR/SSG for SEO + Client interactivity
+- React 18+
+- TypeScript
+
+// Styling & UI
+- Tailwind CSS - utility-first styling
+- shadcn/ui - accessible component library
+- Radix UI - headless UI primitives
+- Lucide React - icons
+
+// State Management
+- Zustand or Jotai - lightweight state management
+- TanStack Query (React Query) - server state management
+
+// Forms & Validation
+- React Hook Form
+- Zod - TypeScript-first schema validation
+Backend Stack
+// Primary API (Go - matches your 24.8% Go usage)
+- Go 1.21+
+- Gin or Fiber - web framework
+- GORM - ORM for PostgreSQL
+- golang-migrate - database migrations
+
+// Alternative: Node.js services (for rapid prototyping)
+- NestJS (TypeScript) - modular architecture
+- Prisma - type-safe ORM
+Database & Storage
+-- Primary Database
+- PostgreSQL 15+ - relational data
+  - User profiles, reviews, events
+  - World ID verifications
+  - Consent records (encrypted)
+
+-- Caching Layer
+- Redis - session storage, rate limiting, caching
+
+-- File Storage
+- AWS S3 / Cloudflare R2 - images, user uploads
+- CloudFront / Cloudflare CDN - asset delivery
+Web3 & Identity
+// Identity & Verification
+- World ID (ID Kit) - proof-of-personhood
+- @worldcoin/idkit - React integration
+- ethers.js or viem - blockchain interaction
+
+// Future: Decentralized Reputation
+- Ceramic Network - DID infrastructure
+- IPFS - decentralized storage (optional)
+Payment & Commerce
+// Payment Processing
+- Stripe - international payments (ticket sales)
+- ECPay - Taiwan local payments
+
+// Affiliate Tracking
+- Custom tracking system (Go backend)
+- Alternative: Impact.com, PartnerStack APIs
+Authentication & Security
+// Auth System
+- NextAuth.js v5 (Auth.js) - OAuth + World ID
+- JWT tokens (short-lived access + refresh tokens)
+- bcrypt - password hashing (if needed)
+
+// Security
+- Helmet.js - HTTP headers
+- rate-limiter-flexible - API rate limiting
+- OWASP recommendations for content security
+DevOps & Deployment
+# Hosting
+Frontend: Vercel (Next.js optimized)
+Backend: Railway, Render, or Fly.io
+Database: Supabase, Railway, or Neon
+
+# CI/CD
+- GitHub Actions
+- Turborepo remote caching
+
+# Monitoring
+- Sentry - error tracking
+- PostHog - analytics (privacy-focused)
+- BetterStack - uptime monitoring
+
+# Infrastructure as Code
+- Terraform (matches your 11.4% HCL)
+Development Tools
+# Code Quality
+- ESLint + Prettier
+- Husky + lint-staged (pre-commit hooks)
+- Commitlint (conventional commits)
+
+# Testing
+- Vitest - unit tests
+- Playwright - e2e tests
+- Go's built-in testing package
+
+# API Development
+- OpenAPI/Swagger - API documentation
+- Postman/Bruno - API testing
+Module-Specific Recommendations
+Module 1: Review Library (內容評論庫)
+// Content Management
+- Tiptap or Novel - rich text editor
+- MDX - markdown with React components
+- Next.js ISR - incremental static regeneration for SEO
+
+// Search
+- Meilisearch or Algolia - full-text search
