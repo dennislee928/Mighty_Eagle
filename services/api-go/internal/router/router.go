@@ -10,6 +10,7 @@ import (
 	"github.com/dennislee928/mighty-eagle/api-go/internal/middleware"
 	"github.com/dennislee928/mighty-eagle/api-go/internal/persona"
 	"github.com/dennislee928/mighty-eagle/api-go/internal/persona/providers"
+	"github.com/dennislee928/mighty-eagle/api-go/internal/reputation"
 	"github.com/dennislee928/mighty-eagle/api-go/internal/webhooks"
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
@@ -50,6 +51,9 @@ func SetupRouter(db *gorm.DB, redisClient *redis.Client) *gin.Engine {
 	consentService := consent.NewService(db, auditLogger)
 	consentHandler := consent.NewHandler(consentService)
 
+	reputationService := reputation.NewService(db, redisClient, auditLogger)
+	reputationHandler := reputation.NewHandler(reputationService)
+
 	// API v1 routes
 	v1 := r.Group("/v1")
 	{
@@ -65,6 +69,9 @@ func SetupRouter(db *gorm.DB, redisClient *redis.Client) *gin.Engine {
 		v1.POST("/consent/tokens", consentHandler.CreateToken)
 		v1.POST("/consent/tokens/:id/revoke", consentHandler.RevokeToken)
 		v1.GET("/consent/tokens/:id", consentHandler.GetToken)
+
+		// Reputation routes
+		v1.GET("/reputation/:subject", reputationHandler.GetReputation)
 
 		// Placeholder: API info endpoint
 		v1.GET("/info", func(c *gin.Context) {
