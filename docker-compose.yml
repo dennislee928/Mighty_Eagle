@@ -3,25 +3,25 @@ version: '3.8'
 services:
   postgres:
     image: postgres:15-alpine
-    container_name: aegis-postgres
+    container_name: mighty_eagle_db
     environment:
-      POSTGRES_USER: aegis
-      POSTGRES_PASSWORD: aegis_password
-      POSTGRES_DB: aegis_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: mighty_eagle
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+      - ./services/api-go/migrations:/docker-entrypoint-initdb.d
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U aegis -d aegis_db"]
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
       timeout: 5s
       retries: 5
 
   redis:
     image: redis:7-alpine
-    container_name: aegis-redis
+    container_name: mighty_eagle_redis
     ports:
       - "6379:6379"
     volumes:
@@ -29,8 +29,35 @@ services:
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
-      timeout: 5s
+      timeout: 3s
       retries: 5
+
+  api:
+    build:
+      context: ./services/api-go
+      dockerfile: Dockerfile
+    container_name: mighty_eagle_api
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=8080
+      - GIN_MODE=debug
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_NAME=mighty_eagle
+      - DB_SSLMODE=disable
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./services/api-go:/app
+    command: ["go", "run", "main.go"]
 
 volumes:
   postgres_data:

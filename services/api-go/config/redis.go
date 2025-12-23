@@ -2,34 +2,34 @@ package config
 
 import (
 	"context"
+	"fmt"
 	"log"
-	"os"
 
-	"github.com/go-redis/redis/v8"
+	"github.com/redis/go-redis/v9"
 )
 
-var RedisClient *redis.Client
+var Redis *redis.Client
 
-func ConnectRedis() {
-	addr := os.Getenv("REDIS_ADDR")
-	if addr == "" {
-		addr = "localhost:6379"
-	}
+// InitRedis initializes the Redis connection
+func InitRedis() (*redis.Client, error) {
+	addr := fmt.Sprintf("%s:%s",
+		getEnv("REDIS_HOST", "localhost"),
+		getEnv("REDIS_PORT", "6379"),
+	)
 
-	password := os.Getenv("REDIS_PASSWORD")
-
-	RedisClient = redis.NewClient(&redis.Options{
+	client := redis.NewClient(&redis.Options{
 		Addr:     addr,
-		Password: password,
-		DB:       0, // default DB
+		Password: getEnv("REDIS_PASSWORD", ""),
+		DB:       0, // use default DB
 	})
 
-	// Test the connection
+	// Test connection
 	ctx := context.Background()
-	_, err := RedisClient.Ping(ctx).Result()
-	if err != nil {
-		log.Fatal("Failed to connect to Redis:", err)
+	if err := client.Ping(ctx).Err(); err != nil {
+		return nil, fmt.Errorf("failed to connect to Redis: %w", err)
 	}
 
-	log.Println("Redis connected successfully")
+	Redis = client
+	log.Println("✅ Redis connection established")
+	return client, nil
 }

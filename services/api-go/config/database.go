@@ -4,47 +4,75 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 var DB *gorm.DB
 
-func ConnectDatabase() {
-	host := os.Getenv("DB_HOST")
-	if host == "" {
-		host = "localhost"
+// InitDB initializes the database connection
+func InitDB() (*gorm.DB, error) {
+	dsn := fmt.Sprintf(
+		"host=%s user=%s password=%s dbname=%s port=%s sslmode=%s TimeZone=UTC",
+		getEnv("DB_HOST", "localhost"),
+		getEnv("DB_USER", "postgres"),
+		getEnv("DB_PASSWORD", "postgres"),
+		getEnv("DB_NAME", "mighty_eagle"),
+		getEnv("DB_PORT", "5432"),
+		getEnv("DB_SSLMODE", "disable"),
+	)
+
+	// Configure GORM logger
+	gormLogger := logger.Default.LogMode(logger.Info)
+	if os.Getenv("GIN_MODE") == "release" {
+		gormLogger = logger.Default.LogMode(logger.Error)
 	}
 
-	port := os.Getenv("DB_PORT")
-	if port == "" {
-		port = "5432"
-	}
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
+		Logger: gormLogger,
+		NowFunc: func() time.Time {
+			return time.Now().UTC()
+		},
+	})
 
-	user := os.Getenv("DB_USER")
-	if user == "" {
-		user = "aegis"
-	}
-
-	password := os.Getenv("DB_PASSWORD")
-	if password == "" {
-		password = "aegis_password"
-	}
-
-	dbname := os.Getenv("DB_NAME")
-	if dbname == "" {
-		dbname = "aegis_db"
-	}
-
-	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable",
-		host, user, password, dbname, port)
-
-	database, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
-		log.Fatal("Failed to connect to database:", err)
+		return nil, fmt.Errorf("failed to connect to database: %w", err)
 	}
 
-	DB = database
-	log.Println("Database connected successfully")
+	sqlDB, err := db.DB()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get database instance: %w", err)
+	}
+
+	// Connection pool settings
+	sqlDB.SetMaxIdleConns(10)
+	sqlDB.SetMaxOpenConns(100)
+	sqlDB.SetConnMaxLifetime(time.Hour)
+
+	DB = db
+	log.Println("✅ Database connection established")
+	return db, nil
+}
+
+// CloseDB closes the database connection
+func CloseDB(db *gorm.DB) {
+	sqlDB, err := db.DB()
+	if err != nil {
+		log.Printf("Error getting database instance: %v", err)
+		return
+	}
+	if err := sqlDB.Close(); err != nil {
+		log.Printf("Error closing database: %v", err)
+	}
+}
+
+// getEnv gets environment variable with fallback
+func getEnv(key, fallback string) string {
+	if value := os.Getenv(key); value != "" {
+		return value
+	}
+	return fallback
 }

@@ -1,0 +1,389 @@
+openapi: 3.0.3
+info:
+  title: Mighty Eagle Trust Layer API
+  description: |
+    API-first trust infrastructure for adult platforms providing persona verification, 
+    consent proof, reputation scoring, and audit capabilities.
+  version: 0.1.0
+  contact:
+    name: API Support
+    email: support@mightyeagle.dev
+
+servers:
+  - url: http://localhost:8080
+    description: Local development
+  - url: https://api.mightyeagle.dev
+    description: Production
+
+security:
+  - ApiKeyAuth: []
+
+tags:
+  - name: Health
+    description: Health check endpoints
+  - name: Persona
+    description: Persona verification operations
+  - name: Consent
+    description: Consent token management
+  - name: Reputation
+    description: Reputation scoring
+  - name: Webhooks
+    description: Webhook endpoint management
+  - name: Audit
+    description: Audit log exports
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: API key for tenant authentication
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error code
+        message:
+          type: string
+          description: Human-readable error message
+      required:
+        - error
+        - message
+
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [healthy]
+        service:
+          type: string
+        version:
+          type: string
+
+    PersonaVerification:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        subject_id:
+          type: string
+        provider:
+          type: string
+          enum: [worldid, mock]
+        status:
+          type: string
+          enum: [pending, verified, failed, expired]
+        confidence_score:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 100
+        created_at:
+          type: string
+          format: date-time
+        verified_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    CreateVerificationRequest:
+      type: object
+      properties:
+        provider:
+          type: string
+          enum: [worldid, mock]
+        subject_id:
+          type: string
+        metadata:
+          type: object
+          additionalProperties: true
+      required:
+        - provider
+        - subject_id
+
+    ConsentToken:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        parties:
+          type: array
+          items:
+            type: string
+        scope:
+          type: string
+        status:
+          type: string
+          enum: [active, revoked, expired]
+        issued_at:
+          type: string
+          format: date-time
+        expires_at:
+          type: string
+          format: date-time
+
+    CreateConsentTokenRequest:
+      type: object
+      properties:
+        parties:
+          type: array
+          items:
+            type: string
+          minItems: 2
+        scope:
+          type: string
+        expires_at:
+          type: string
+          format: date-time
+      required:
+        - parties
+        - scope
+        - expires_at
+
+    ReputationScore:
+      type: object
+      properties:
+        subject_id:
+          type: string
+        score:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 100
+        breakdown:
+          type: object
+          properties:
+            verified_status_weight:
+              type: number
+            account_age_weight:
+              type: number
+            dispute_signals_weight:
+              type: number
+        calculated_at:
+          type: string
+          format: date-time
+
+paths:
+  /health:
+    get:
+      summary: Health check
+      tags: [Health]
+      security: []
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+
+  /v1/info:
+    get:
+      summary: Get API info
+      tags: [Health]
+      responses:
+        '200':
+          description: API information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  version:
+                    type: string
+                  tenant:
+                    type: object
+
+  /v1/persona/verifications:
+    post:
+      summary: Create persona verification
+      tags: [Persona]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateVerificationRequest'
+      responses:
+        '201':
+          description: Verification created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PersonaVerification'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /v1/persona/verifications/{id}:
+    get:
+      summary: Get verification status
+      tags: [Persona]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Verification details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PersonaVerification'
+        '404':
+          description: Verification not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /v1/consent/tokens:
+    post:
+      summary: Issue consent token
+      tags: [Consent]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateConsentTokenRequest'
+      responses:
+        '201':
+          description: Consent token created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConsentToken'
+
+  /v1/consent/tokens/{id}/revoke:
+    post:
+      summary: Revoke consent token
+      tags: [Consent]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                revoked_by:
+                  type: string
+                reason:
+                  type: string
+      responses:
+        '200':
+          description: Token revoked
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConsentToken'
+
+  /v1/reputation/{subject}:
+    get:
+      summary: Get reputation score
+      tags: [Reputation]
+      parameters:
+        - name: subject
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Reputation score
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReputationScore'
+
+  /v1/webhooks/endpoints:
+    post:
+      summary: Register webhook endpoint
+      tags: [Webhooks]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                url:
+                  type: string
+                  format: uri
+                events:
+                  type: array
+                  items:
+                    type: string
+              required:
+                - url
+                - events
+      responses:
+        '201':
+          description: Webhook endpoint registered
+
+  /v1/audit/exports:
+    post:
+      summary: Create audit export job
+      tags: [Audit]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                format:
+                  type: string
+                  enum: [csv, json]
+                start_date:
+                  type: string
+                  format: date-time
+                end_date:
+                  type: string
+                  format: date-time
+              required:
+                - format
+                - start_date
+                - end_date
+      responses:
+        '202':
+          description: Export job created
+
+  /v1/audit/exports/{id}:
+    get:
+      summary: Get export job status
+      tags: [Audit]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Export job details
