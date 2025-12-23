@@ -1,9 +1,15 @@
 package router
 
 import (
+	"context"
 	"net/http"
+	"os"
 
+	"github.com/dennislee928/mighty-eagle/api-go/internal/audit"
 	"github.com/dennislee928/mighty-eagle/api-go/internal/middleware"
+	"github.com/dennislee928/mighty-eagle/api-go/internal/persona"
+	"github.com/dennislee928/mighty-eagle/api-go/internal/persona/providers"
+	"github.com/dennislee928/mighty-eagle/api-go/internal/webhooks"
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
@@ -26,6 +32,21 @@ func SetupRouter(db *gorm.DB, redisClient *redis.Client) *gin.Engine {
 		})
 	})
 
+	// Initialize Services
+	// Initialize Services
+	auditLogger := audit.NewLogger(db)
+	webhookService := webhooks.NewService(db)
+	
+	// Start webhook worker
+	go webhookService.Worker(context.Background())
+	
+	personaService := persona.NewService(db, auditLogger, webhookService)
+	personaService.RegisterProvider(providers.NewMockProvider())
+	if os.Getenv("WORLDID_APP_ID") != "" {
+		personaService.RegisterProvider(providers.NewWorldIDProvider())
+	}
+	personaHandler := persona.NewHandler(personaService)
+
 	// API v1 routes
 	v1 := r.Group("/v1")
 	{
@@ -33,13 +54,9 @@ func SetupRouter(db *gorm.DB, redisClient *redis.Client) *gin.Engine {
 		v1.Use(middleware.AuthMiddleware(db))
 		v1.Use(middleware.RateLimitMiddleware(redisClient))
 
-		// TODO: Add route groups for each module
-		// - Persona verification
-		// - Consent tokens
-		// - Reputation
-		// - Webhooks
-		// - Audit exports
-		// - Billing
+		// Persona verification routes
+		v1.POST("/persona/verifications", personaHandler.CreateVerification)
+		v1.GET("/persona/verifications/:id", personaHandler.GetVerification)
 
 		// Placeholder: API info endpoint
 		v1.GET("/info", func(c *gin.Context) {

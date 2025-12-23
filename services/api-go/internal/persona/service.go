@@ -4,9 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/dennislee928/mighty-eagle/api-go/internal/audit"
 	"github.com/dennislee928/mighty-eagle/api-go/internal/models"
+	"github.com/dennislee928/mighty-eagle/api-go/internal/webhooks"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
@@ -16,14 +18,16 @@ type Service struct {
 	db        *gorm.DB
 	providers map[string]VerificationProvider
 	audit     *audit.Logger
+	webhooks  *webhooks.Service
 }
 
 // NewService creates a new persona service
-func NewService(db *gorm.DB, audit *audit.Logger) *Service {
+func NewService(db *gorm.DB, audit *audit.Logger, webhooks *webhooks.Service) *Service {
 	return &Service{
 		db:        db,
 		providers: make(map[string]VerificationProvider),
 		audit:     audit,
+		webhooks:  webhooks,
 	}
 }
 
@@ -90,7 +94,29 @@ func (s *Service) CreateVerification(ctx context.Context, tenantID uuid.UUID, in
 		},
 	})
 
-	// TODO: Trigger webhook (M4)
+	// Dispatch Webhook
+	go func() {
+		// Reconstruct event log metadata for webhook payload
+		meta, _ := json.Marshal(map[string]interface{}{
+			"provider": input.Provider,
+			"score":    result.ConfidenceScore,
+			"error":    result.Error,
+		})
+
+		dispatchEvt := models.EventLog{
+			ID:           uuid.New(), // Temporary ID for dispatch if not persisted yet
+			TenantID:     tenantID,
+			EventType:    eventType,
+			CreatedAt:    time.Now(),
+			SubjectID:    &input.SubjectID,
+			ResourceID:   &verification.ID,
+			Metadata:     string(meta),
+		}
+		
+		if err := s.webhooks.DispatchEvent(context.Background(), dispatchEvt); err != nil {
+			fmt.Printf("Failed to dispatch webhook: %v\n", err)
+		}
+	}()
 
 	return &verification, nil
 }
