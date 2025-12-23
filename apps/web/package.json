@@ -10,7 +10,7 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@aegis/shared": "workspace:*",
+    "@aegis/shared": "*",
     "@tanstack/react-query": "^5.8.4",
     "next": "14.0.3",
     "react": "^18.2.0",
@@ -19,8 +19,8 @@
     "zustand": "^4.4.6"
   },
   "devDependencies": {
-    "@aegis/eslint-config": "workspace:*",
-    "@aegis/typescript-config": "workspace:*",
+    "@aegis/eslint-config": "*",
+    "@aegis/typescript-config": "*",
     "@types/node": "^20.8.10",
     "@types/react": "^18.2.37",
     "@types/react-dom": "^18.2.15",
