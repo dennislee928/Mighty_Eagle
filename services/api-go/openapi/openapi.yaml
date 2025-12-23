@@ -31,6 +31,8 @@ tags:
     description: Webhook endpoint management
   - name: Audit
     description: Audit log exports
+  - name: Billing
+    description: Usage and billing management
 
 components:
   securitySchemes:
@@ -160,18 +162,50 @@ components:
           format: float
           minimum: 0
           maximum: 100
-        breakdown:
-          type: object
-          properties:
-            verified_status_weight:
-              type: number
-            account_age_weight:
-              type: number
-            dispute_signals_weight:
-              type: number
-        calculated_at:
+        level:
+          type: string
+        last_calculated:
           type: string
           format: date-time
+
+    AuditExportJob:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [pending, processing, completed, failed]
+        format:
+          type: string
+          enum: [csv, json]
+        download_url:
+          type: string
+          nullable: true
+        record_count:
+          type: integer
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+
+    UsageResponse:
+      type: object
+      properties:
+        period:
+          type: string
+        tier:
+          type: string
+        metrics:
+          type: object
+          additionalProperties:
+            type: object
+            properties:
+              used:
+                type: integer
+              limit:
+                type: integer
 
 paths:
   /health:
@@ -223,8 +257,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PersonaVerification'
-        '401':
-          description: Unauthorized
+        '402':
+          description: Quota Exceeded
           content:
             application/json:
               schema:
@@ -250,10 +284,6 @@ paths:
                 $ref: '#/components/schemas/PersonaVerification'
         '404':
           description: Verification not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
 
   /v1/consent/tokens:
     post:
@@ -297,10 +327,6 @@ paths:
       responses:
         '200':
           description: Token revoked
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ConsentToken'
 
   /v1/reputation/{subject}:
     get:
@@ -321,6 +347,18 @@ paths:
                 $ref: '#/components/schemas/ReputationScore'
 
   /v1/webhooks/endpoints:
+    get:
+      summary: List webhook endpoints
+      tags: [Webhooks]
+      responses:
+        '200':
+          description: List of endpoints
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                   type: object
     post:
       summary: Register webhook endpoint
       tags: [Webhooks]
@@ -370,8 +408,14 @@ paths:
                 - start_date
                 - end_date
       responses:
-        '202':
+        '201':
           description: Export job created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuditExportJob'
+        '402':
+          description: Quota Exceeded
 
   /v1/audit/exports/{id}:
     get:
@@ -387,3 +431,19 @@ paths:
       responses:
         '200':
           description: Export job details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuditExportJob'
+
+  /v1/billing/usage:
+    get:
+      summary: Get current usage
+      tags: [Billing]
+      responses:
+        '200':
+          description: Usage statistics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsageResponse'
