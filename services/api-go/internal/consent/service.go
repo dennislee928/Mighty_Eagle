@@ -63,25 +63,8 @@ func (s *Service) CreateToken(ctx context.Context, tenantID uuid.UUID, tenantSec
 		return nil, fmt.Errorf("failed to generate receipt: %w", err)
 	}
 
-	// 3. Marshal data
-	partiesJSON, _ := json.Marshal(input.Parties) // Store as JSON array string or Postgres array?
-	// Schema says `parties TEXT[]`. GORM handles conversion?
-	// We defined struct as `Parties string` with specific tag type text[].
-	// GORM with PG driver usually handles []string if type is text[].
-	// But our model has `Parties string` which implies we store JSON string or GORM serialization.
-	// Let's store as JSON string to be safe with the string type definition.
-	
-	// Wait, looking at models.go: `Parties string gorm:"type:text[];not null"`.
-	// This is a mismatch. If it's text[], the Go type should be []string or pq.StringArray.
-	// If Go type is string, GORM tries to save a string.
-	// Let's fix this by marshaling to JSON string literal representation of postgres array?
-	// "{party1,party2}"
-	
-	// Actually, let's look at how we defined the model.
-	// `Parties string `gorm:"type:text[];not null" json:"parties"`
-	// This will cause issues. We should update the model to `pg.StringArray` or use a serializer.
-	// For now, let's treat it as a JSON serialized string and change column type to text / jsonb?
-	// Or just Format the string manually as Postgres array format: "{a,b}"
+	// 3. Prepare data
+	// Format the string manually as Postgres array format: "{a,b}"
 	partiesPGStr := toPostgresArray(input.Parties)
 
 	metadataJSON, _ := json.Marshal(input.Metadata)

@@ -46,14 +46,11 @@ func (s *Service) Enqueue(ctx context.Context, tenantID uuid.UUID, eventType str
 		return nil
 	}
 
-	// 2. Prepare payload
-	payloadBytes, err := json.Marshal(payload)
-	if err != nil {
-		return fmt.Errorf("failed to marshal payload: %w", err)
-	}
-
+	// In the worker pattern, we'll create delivery records.
+	// We don't need to marshal here yet if we are just enqueuing.
+	
 	// 3. Create delivery records for each endpoint
-	for _, endpoint := range endpoints {
+	for range endpoints {
 		// Log event ID reference if we had the event log ID, but here we just create a delivery record
 		// For M0/M1 MVP, we might create the event log first then pass ID.
 		// For now, let's assume we enqueue with just payload.
@@ -74,6 +71,25 @@ func (s *Service) CreateEndpoint(ctx context.Context, input models.WebhookEndpoi
 		return nil, err
 	}
 	return &input, nil
+}
+
+// ListEndpoints retrieves endpoints for a tenant
+func (s *Service) ListEndpoints(ctx context.Context, tenantID uuid.UUID) ([]models.WebhookEndpoint, error) {
+	var endpoints []models.WebhookEndpoint
+	if err := s.db.Where("tenant_id = ?", tenantID).Find(&endpoints).Error; err != nil {
+		return nil, err
+	}
+	return endpoints, nil
+}
+
+// GenerateEndpointSecret creates a secure random string
+func (s *Service) GenerateEndpointSecret() (string, error) {
+	// Use crypto/rand usually, but for MVP here use math/rand or simpler?
+	// Actually uuid works fine for a secret string foundation, but hex random is better standard.
+	// Importing crypto/rand would require import alias if math/rand handles conflicting name.
+	// Let's use uuid for simplicity as it's already imported, or just import crypto/rand properly.
+	// Let's do simple UUID based secret.
+	return "whsec_" + uuid.New().String(), nil 
 }
 
 // SignPayload generates HMAC signature

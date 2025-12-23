@@ -92,18 +92,16 @@ func (ConsentToken) TableName() string {
 
 // ReputationScore represents a reputation score
 type ReputationScore struct {
-	ID                    uuid.UUID  `gorm:"type:uuid;primaryKey;default:uuid_generate_v4()" json:"id"`
-	TenantID              uuid.UUID  `gorm:"type:uuid;not null" json:"tenant_id"`
-	SubjectID             string     `gorm:"not null" json:"subject_id"`
-	Score                 float64    `gorm:"type:decimal(5,2);not null" json:"score"`
-	VerifiedStatusWeight  float64    `gorm:"type:decimal(5,2);default:0" json:"verified_status_weight"`
-	AccountAgeWeight      float64    `gorm:"type:decimal(5,2);default:0" json:"account_age_weight"`
-	DisputeSignalsWeight  float64    `gorm:"type:decimal(5,2);default:0" json:"dispute_signals_weight"`
-	Metadata              string     `gorm:"type:jsonb;default:'{}'" json:"metadata"`
-	CalculatedAt          time.Time  `gorm:"default:CURRENT_TIMESTAMP" json:"calculated_at"`
-	ExpiresAt             *time.Time `json:"expires_at,omitempty"`
-	CreatedAt             time.Time  `gorm:"default:CURRENT_TIMESTAMP" json:"created_at"`
-	UpdatedAt             time.Time  `gorm:"default:CURRENT_TIMESTAMP" json:"updated_at"`
+	ID           uuid.UUID  `gorm:"type:uuid;primaryKey;default:uuid_generate_v4()" json:"id"`
+	TenantID     uuid.UUID  `gorm:"type:uuid;not null" json:"tenant_id"`
+	SubjectID    string     `gorm:"not null" json:"subject_id"`
+	Score        float64    `gorm:"type:decimal(5,2);not null" json:"score"`
+	Level        string     `json:"level"`
+	Factors      string     `gorm:"type:jsonb;default:'{}'" json:"factors"`
+	CalculatedAt time.Time  `gorm:"default:CURRENT_TIMESTAMP" json:"calculated_at"`
+	ExpiresAt    *time.Time `json:"expires_at,omitempty"`
+	CreatedAt    time.Time  `gorm:"default:CURRENT_TIMESTAMP" json:"created_at"`
+	UpdatedAt    time.Time  `gorm:"default:CURRENT_TIMESTAMP" json:"updated_at"`
 }
 
 // TableName overrides the table name
@@ -133,6 +131,7 @@ func (WebhookEndpoint) TableName() string {
 type WebhookDelivery struct {
 	ID                uuid.UUID  `gorm:"type:uuid;primaryKey;default:uuid_generate_v4()" json:"id"`
 	WebhookEndpointID uuid.UUID  `gorm:"type:uuid;not null" json:"webhook_endpoint_id"`
+	WebhookEndpoint   WebhookEndpoint `gorm:"foreignKey:WebhookEndpointID" json:"-"`
 	EventID           uuid.UUID  `gorm:"type:uuid;not null" json:"event_id"`
 	Status            string     `gorm:"not null;default:'pending'" json:"status"` // pending, success, failed, dlq
 	AttemptCount      int        `gorm:"default:0" json:"attempt_count"`
@@ -151,4 +150,68 @@ type WebhookDelivery struct {
 // TableName overrides the table name
 func (WebhookDelivery) TableName() string {
 	return "webhook_deliveries"
+}
+
+// AuditExportJob represents an asynchronous audit export request
+type AuditExportJob struct {
+	ID             uuid.UUID  `gorm:"type:uuid;primaryKey;default:uuid_generate_v4()" json:"id"`
+	TenantID       uuid.UUID  `gorm:"type:uuid;not null" json:"tenant_id"`
+	Format         string     `gorm:"not null" json:"format"` // csv, json
+	Status         string     `gorm:"not null;default:'pending'" json:"status"` // pending, processing, completed, failed
+	StartDate      time.Time  `gorm:"not null" json:"start_date"`
+	EndDate        time.Time  `gorm:"not null" json:"end_date"`
+	EventTypes     *string    `gorm:"type:text[]" json:"event_types,omitempty"`
+	DownloadURL    *string    `json:"download_url,omitempty"`
+	FileSizeByes   *int64     `json:"file_size_bytes,omitempty"`
+	RecordCount    *int       `json:"record_count,omitempty"`
+	ErrorMessage   *string    `json:"error_message,omitempty"`
+	Parameters     string     `gorm:"type:jsonb" json:"parameters,omitempty"`
+	CreatedAt      time.Time  `gorm:"default:CURRENT_TIMESTAMP" json:"created_at"`
+	CompletedAt    *time.Time `json:"completed_at,omitempty"`
+	ExpiresAt      *time.Time `json:"expires_at,omitempty"`
+}
+
+// TableName overrides the table name
+func (AuditExportJob) TableName() string {
+	return "audit_export_jobs"
+}
+
+// Subscription represents a tenant's billing subscription
+type Subscription struct {
+	ID                   uuid.UUID  `gorm:"type:uuid;primaryKey;default:uuid_generate_v4()" json:"id"`
+	TenantID             uuid.UUID  `gorm:"type:uuid;not null" json:"tenant_id"`
+	StripeCustomerID     *string    `json:"stripe_customer_id,omitempty"`
+	StripeSubscriptionID *string    `json:"stripe_subscription_id,omitempty"`
+	Tier                 string     `gorm:"not null;default:'lite'" json:"tier"`
+	Status               string     `gorm:"not null;default:'active'" json:"status"`
+	CurrentPeriodStart   *time.Time `json:"current_period_start,omitempty"`
+	CurrentPeriodEnd     *time.Time `json:"current_period_end,omitempty"`
+	CancelAt             *time.Time `json:"cancel_at,omitempty"`
+	CanceledAt           *time.Time `json:"canceled_at,omitempty"`
+	CreatedAt            time.Time  `gorm:"default:CURRENT_TIMESTAMP" json:"created_at"`
+	UpdatedAt            time.Time  `gorm:"default:CURRENT_TIMESTAMP" json:"updated_at"`
+}
+
+// TableName overrides the table name
+func (Subscription) TableName() string {
+	return "subscriptions"
+}
+
+// UsageMetric represents tracked usage for a tenant
+type UsageMetric struct {
+	ID                uuid.UUID `gorm:"type:uuid;primaryKey;default:uuid_generate_v4()" json:"id"`
+	TenantID          uuid.UUID `gorm:"type:uuid;not null" json:"tenant_id"`
+	PeriodStart       time.Time `gorm:"not null" json:"period_start"`
+	PeriodEnd         time.Time `gorm:"not null" json:"period_end"`
+	VerificationCount int       `gorm:"default:0" json:"verification_count"`
+	ConsentTokenCount int       `gorm:"default:0" json:"consent_token_count"`
+	ExportCount       int       `gorm:"default:0" json:"export_count"`
+	APIRequestCount   int       `gorm:"default:0" json:"api_request_count"`
+	CreatedAt         time.Time `gorm:"default:CURRENT_TIMESTAMP" json:"created_at"`
+	UpdatedAt         time.Time `gorm:"default:CURRENT_TIMESTAMP" json:"updated_at"`
+}
+
+// TableName overrides the table name
+func (UsageMetric) TableName() string {
+	return "usage_metrics"
 }

@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/dennislee928/mighty-eagle/api-go/internal/audit"
+	"github.com/dennislee928/mighty-eagle/api-go/internal/billing"
 	"github.com/dennislee928/mighty-eagle/api-go/internal/consent"
 	"github.com/dennislee928/mighty-eagle/api-go/internal/middleware"
 	"github.com/dennislee928/mighty-eagle/api-go/internal/persona"
@@ -36,12 +37,14 @@ func SetupRouter(db *gorm.DB, redisClient *redis.Client) *gin.Engine {
 
 	// Initialize Services
 	auditLogger := audit.NewLogger(db)
+	billingService := billing.NewService(db, redisClient, auditLogger)
+	billingHandler := billing.NewHandler(billingService)
+
 	webhookService := webhooks.NewService(db)
-	
 	// Start webhook worker
 	go webhookService.Worker(context.Background())
 	
-	personaService := persona.NewService(db, auditLogger, webhookService)
+	personaService := persona.NewService(db, auditLogger, webhookService, billingService)
 	personaService.RegisterProvider(providers.NewMockProvider())
 	if os.Getenv("WORLDID_APP_ID") != "" {
 		personaService.RegisterProvider(providers.NewWorldIDProvider())
@@ -54,6 +57,9 @@ func SetupRouter(db *gorm.DB, redisClient *redis.Client) *gin.Engine {
 	reputationService := reputation.NewService(db, redisClient, auditLogger)
 	reputationHandler := reputation.NewHandler(reputationService)
 
+	auditExporter := audit.NewExporter(db, auditLogger, billingService)
+	auditHandler := audit.NewHandler(auditExporter)
+
 	// API v1 routes
 	v1 := r.Group("/v1")
 	{
@@ -62,7 +68,7 @@ func SetupRouter(db *gorm.DB, redisClient *redis.Client) *gin.Engine {
 		v1.Use(middleware.RateLimitMiddleware(redisClient))
 
 		// Persona verification routes
-		v1.POST("/persona/verifications", personaHandler.CreateVerification)
+		v1.POST("/persona/verifications", billing.CheckEntitlementMiddleware(billingService, "verifications"), personaHandler.CreateVerification)
 		v1.GET("/persona/verifications/:id", personaHandler.GetVerification)
 		
 		// Consent token routes
@@ -72,6 +78,18 @@ func SetupRouter(db *gorm.DB, redisClient *redis.Client) *gin.Engine {
 
 		// Reputation routes
 		v1.GET("/reputation/:subject", reputationHandler.GetReputation)
+
+		// Audit Export routes
+		v1.POST("/audit/exports", billing.CheckEntitlementMiddleware(billingService, "exports"), auditHandler.CreateExport)
+		v1.GET("/audit/exports/:id", auditHandler.GetExport)
+
+		// Webhook Management routes
+		webhookHandler := webhooks.NewHandler(webhookService)
+		v1.POST("/webhooks/endpoints", webhookHandler.CreateEndpoint)
+		v1.GET("/webhooks/endpoints", webhookHandler.ListEndpoints)
+
+		// Billing routes
+		v1.GET("/billing/usage", billingHandler.GetUsage)
 
 		// Placeholder: API info endpoint
 		v1.GET("/info", func(c *gin.Context) {

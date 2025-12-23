@@ -19,15 +19,22 @@ type Service struct {
 	providers map[string]VerificationProvider
 	audit     *audit.Logger
 	webhooks  *webhooks.Service
+	billing   BillingService
+}
+
+// BillingService interface to avoid circular dependency
+type BillingService interface {
+	ReportUsage(ctx context.Context, tenantID uuid.UUID, metric string, amount int) error
 }
 
 // NewService creates a new persona service
-func NewService(db *gorm.DB, audit *audit.Logger, webhooks *webhooks.Service) *Service {
+func NewService(db *gorm.DB, audit *audit.Logger, webhooks *webhooks.Service, billing BillingService) *Service {
 	return &Service{
 		db:        db,
 		providers: make(map[string]VerificationProvider),
 		audit:     audit,
 		webhooks:  webhooks,
+		billing:   billing,
 	}
 }
 
@@ -72,6 +79,13 @@ func (s *Service) CreateVerification(ctx context.Context, tenantID uuid.UUID, in
 	if err := s.db.Create(&verification).Error; err != nil {
 		return nil, fmt.Errorf("failed to create verification record: %w", err)
 	}
+
+	// Report Billing Usage (Non-blocking)
+	go func() {
+		if s.billing != nil {
+			s.billing.ReportUsage(context.Background(), tenantID, "verifications", 1)
+		}
+	}()
 
 	// Log audit event
 	eventType := "persona.verified"
