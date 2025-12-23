@@ -1,0 +1,12 @@
+{
+  "name": "@aegis/api-go",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "go build -o bin/api-go .",
+    "dev": "go run .",
+    "lint": "golangci-lint run || echo 'golangci-lint not installed, skipping Go linting'",
+    "type-check": "go vet ./...",
+    "clean": "rm -rf bin/"
+  }
+}

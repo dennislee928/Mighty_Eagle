@@ -17,14 +17,11 @@ func ConnectRedis() {
 	}
 
 	password := os.Getenv("REDIS_PASSWORD")
-	// password can be empty for local development
-
-	db := 0 // default DB
 
 	RedisClient = redis.NewClient(&redis.Options{
 		Addr:     addr,
 		Password: password,
-		DB:       db,
+		DB:       0, // default DB
 	})
 
 	// Test the connection

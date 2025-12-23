@@ -1,47 +1,75 @@
-# Aegis Trust Ecosystem - Development Setup Script (PowerShell)
+# Aegis Trust Ecosystem Development Setup Script for Windows
 
-Write-Host "🚀 Setting up Aegis Trust Ecosystem for development..." -ForegroundColor Green
+Write-Host "Setting up Aegis Trust Ecosystem development environment..." -ForegroundColor Green
 
 # Check if Docker is running
+Write-Host "Checking Docker..." -ForegroundColor Yellow
 try {
-    docker info | Out-Null
+    docker --version | Out-Null
+    Write-Host "Docker is available" -ForegroundColor Green
 } catch {
-    Write-Host "❌ Docker is not running. Please start Docker and try again." -ForegroundColor Red
+    Write-Host "Docker is not available. Please install Docker Desktop and ensure it's running." -ForegroundColor Red
     exit 1
 }
 
+# Check if Node.js is installed
+Write-Host "Checking Node.js..." -ForegroundColor Yellow
+try {
+    node --version | Out-Null
+    Write-Host "Node.js is available" -ForegroundColor Green
+} catch {
+    Write-Host "Node.js is not available. Please install Node.js 18 or later." -ForegroundColor Red
+    exit 1
+}
+
+# Check if Go is installed
+Write-Host "Checking Go..." -ForegroundColor Yellow
+try {
+    go version | Out-Null
+    Write-Host "Go is available" -ForegroundColor Green
+} catch {
+    Write-Host "Go is not available. Please install Go 1.21 or later." -ForegroundColor Red
+    exit 1
+}
+
+# Install Node.js dependencies
+Write-Host "Installing Node.js dependencies..." -ForegroundColor Yellow
+npm install
+
 # Start database services
-Write-Host "📦 Starting PostgreSQL and Redis..." -ForegroundColor Yellow
-docker-compose up -d
+Write-Host "Starting PostgreSQL and Redis..." -ForegroundColor Yellow
+docker-compose up -d postgres redis
 
 # Wait for services to be ready
-Write-Host "⏳ Waiting for services to be ready..." -ForegroundColor Yellow
+Write-Host "Waiting for services to be ready..." -ForegroundColor Yellow
 Start-Sleep -Seconds 10
 
 # Check if services are healthy
-$services = docker-compose ps
-if ($services -match "healthy") {
-    Write-Host "✅ Database services are ready!" -ForegroundColor Green
+Write-Host "Checking service health..." -ForegroundColor Yellow
+$postgresHealth = docker-compose ps postgres --format json | ConvertFrom-Json | Select-Object -ExpandProperty Health
+$redisHealth = docker-compose ps redis --format json | ConvertFrom-Json | Select-Object -ExpandProperty Health
+
+if ($postgresHealth -eq "healthy" -and $redisHealth -eq "healthy") {
+    Write-Host "All services are healthy!" -ForegroundColor Green
 } else {
-    Write-Host "⚠️  Services may still be starting up. Check with: docker-compose ps" -ForegroundColor Yellow
+    Write-Host "Services may not be fully ready. Check docker-compose logs for details." -ForegroundColor Yellow
 }
 
-# Install dependencies if not already installed
-if (!(Test-Path "node_modules")) {
-    Write-Host "📦 Installing dependencies..." -ForegroundColor Yellow
-    npm install
+# Copy environment files
+Write-Host "Setting up environment files..." -ForegroundColor Yellow
+if (!(Test-Path "apps/web/.env.local")) {
+    Copy-Item "apps/web/.env.local.example" "apps/web/.env.local"
+    Write-Host "Created apps/web/.env.local from example" -ForegroundColor Green
 }
 
-# Build shared packages
-Write-Host "🔧 Building shared packages..." -ForegroundColor Yellow
-npm run build --workspace=@aegis/shared
-
-Write-Host "🎉 Setup complete! You can now run:" -ForegroundColor Green
-Write-Host "   npm run dev    # Start all development servers" -ForegroundColor Cyan
-Write-Host "   docker-compose ps    # Check service status" -ForegroundColor Cyan
+Write-Host "Development environment setup complete!" -ForegroundColor Green
 Write-Host ""
-Write-Host "Services will be available at:" -ForegroundColor Green
-Write-Host "   Web App: http://localhost:3000" -ForegroundColor Cyan
-Write-Host "   API: http://localhost:8080" -ForegroundColor Cyan
-Write-Host "   PostgreSQL: localhost:5432" -ForegroundColor Cyan
-Write-Host "   Redis: localhost:6379" -ForegroundColor Cyan
+Write-Host "Next steps:" -ForegroundColor Cyan
+Write-Host "1. Run 'npm run dev' to start all development servers" -ForegroundColor White
+Write-Host "2. Visit http://localhost:3000 for the web app" -ForegroundColor White
+Write-Host "3. Visit http://localhost:8080/health for the API health check" -ForegroundColor White
+Write-Host ""
+Write-Host "Useful commands:" -ForegroundColor Cyan
+Write-Host "- npm run db:up    # Start database services" -ForegroundColor White
+Write-Host "- npm run db:down  # Stop database services" -ForegroundColor White
+Write-Host "- npm run db:reset # Reset database with fresh data" -ForegroundColor White
