@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/dennislee928/mighty-eagle/api-go/internal/audit"
+	"github.com/dennislee928/mighty-eagle/api-go/internal/consent"
 	"github.com/dennislee928/mighty-eagle/api-go/internal/middleware"
 	"github.com/dennislee928/mighty-eagle/api-go/internal/persona"
 	"github.com/dennislee928/mighty-eagle/api-go/internal/persona/providers"
@@ -33,7 +34,6 @@ func SetupRouter(db *gorm.DB, redisClient *redis.Client) *gin.Engine {
 	})
 
 	// Initialize Services
-	// Initialize Services
 	auditLogger := audit.NewLogger(db)
 	webhookService := webhooks.NewService(db)
 	
@@ -47,6 +47,9 @@ func SetupRouter(db *gorm.DB, redisClient *redis.Client) *gin.Engine {
 	}
 	personaHandler := persona.NewHandler(personaService)
 
+	consentService := consent.NewService(db, auditLogger)
+	consentHandler := consent.NewHandler(consentService)
+
 	// API v1 routes
 	v1 := r.Group("/v1")
 	{
@@ -57,6 +60,11 @@ func SetupRouter(db *gorm.DB, redisClient *redis.Client) *gin.Engine {
 		// Persona verification routes
 		v1.POST("/persona/verifications", personaHandler.CreateVerification)
 		v1.GET("/persona/verifications/:id", personaHandler.GetVerification)
+		
+		// Consent token routes
+		v1.POST("/consent/tokens", consentHandler.CreateToken)
+		v1.POST("/consent/tokens/:id/revoke", consentHandler.RevokeToken)
+		v1.GET("/consent/tokens/:id", consentHandler.GetToken)
 
 		// Placeholder: API info endpoint
 		v1.GET("/info", func(c *gin.Context) {
