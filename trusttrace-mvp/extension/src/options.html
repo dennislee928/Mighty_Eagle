@@ -1,0 +1,40 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>TrustTrace Options</title>
+    <style>
+      body { font-family: system-ui, sans-serif; margin: 16px; max-width: 720px; }
+      h1 { font-size: 18px; }
+      input { width: 100%; padding: 8px; box-sizing: border-box; }
+      button { padding: 8px 12px; }
+      .row { margin: 10px 0; }
+      .small { font-size: 12px; color: #666; }
+      code { font-family: ui-monospace, Menlo, monospace; }
+      .warn { color: #8a1f1f; }
+    </style>
+  </head>
+  <body>
+    <h1>TrustTrace Options</h1>
+    <p class="small warn">
+      Passphrase is not recoverable. If lost, encrypted vault cannot be decrypted.
+    </p>
+
+    <div class="row">
+      <label>Passphrase</label>
+      <input id="passphrase" type="password" placeholder="Set a strong passphrase" />
+    </div>
+    <div class="row">
+      <button id="save">Save</button>
+      <span id="status" class="small"></span>
+    </div>
+
+    <hr/>
+
+    <div class="row small">
+      KDF: PBKDF2-SHA256, iterations default 310k. Stored parameters are non-secret.
+    </div>
+
+    <script type="module" src="options.js"></script>
+  </body>
+</html>

@@ -1,0 +1,16 @@
+{
+  "name": "trusttrace-contracts",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "hardhat test",
+    "compile": "hardhat compile",
+    "deploy:local": "hardhat run scripts/deploy.ts --network hardhat"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "hardhat": "^2.22.0",
+    "typescript": "^5.6.0",
+    "ts-node": "^10.9.2"
+  }
+}

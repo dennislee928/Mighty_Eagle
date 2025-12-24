@@ -1,0 +1,13 @@
+{
+  "name": "trusttrace-extension",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node ./scripts/build.js",
+    "dev:watch": "node ./scripts/build.js --watch"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "esbuild": "^0.24.0"
+  }
+}

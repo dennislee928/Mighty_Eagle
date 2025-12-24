@@ -1,0 +1,33 @@
+{
+  "manifest_version": 3,
+  "name": "TrustTrace MVP",
+  "version": "0.1.0",
+  "description": "Local encrypted dating CRM + daily commitment export (no on-chain PII).",
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "options_page": "options.html",
+  "permissions": [
+    "storage",
+    "alarms",
+    "activeTab"
+  ],
+  "host_permissions": [
+    "https://tinder.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://tinder.com/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ]
+}

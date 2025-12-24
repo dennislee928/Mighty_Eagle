@@ -1,0 +1,13 @@
+{
+  "name": "trusttrace-mvp",
+  "private": true,
+  "workspaces": [
+    "contracts",
+    "extension",
+    "dapp"
+  ],
+  "scripts": {
+    "lint:docs": "node ./scripts/lint_docs.js",
+    "format:docs": "node ./scripts/format_docs.js"
+  }
+}
